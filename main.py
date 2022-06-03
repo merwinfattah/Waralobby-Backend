@@ -23,6 +23,6 @@ def read_root():
     return {"Hello": "World"}
 
 
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
+@app.get("/franchisors/{franchisor_id}")
+def get_franchisors():
     return {"item_id": item_id, "q": q}
