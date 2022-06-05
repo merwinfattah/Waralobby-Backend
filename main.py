@@ -32,10 +32,10 @@ def get_AllFranchisor():
         conn = database.open_connection()
         with conn.cursor() as cursor:
             cursor.execute('SELECT * FROM franchisor;')
-            result = cursor.fetchall()
+            result = jsonable_encoder(cursor.fetchall())
         conn.close()
 
-        return jsonable_encoder(result)
+        return result
     except Exception as e:
         print(e)
 
