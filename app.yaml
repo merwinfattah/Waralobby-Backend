@@ -1,0 +1,8 @@
+#app.yaml
+runtime: python37
+entrypoint: gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app
+env_variables:
+  CLOUD_SQL_USERNAME: root
+  CLOUD_SQL_PASSWORD: #5O<##l7n-1R_IO<
+  CLOUD_SQL_DATABASE_NAME: waralobby-sql
+  CLOUD_SQL_CONNECTION_NAME: waralobby-self:us-central1:waralobby-sql
