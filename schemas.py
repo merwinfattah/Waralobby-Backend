@@ -7,3 +7,14 @@ class RequestSchema(BaseModel):
     lokasi_tempat: str
     luas_tempat: float
     status: str
+
+class User(BaseModel):
+    username:str
+    nama:str
+    email:str
+    password:str
+
+class Review(BaseModel):
+    id_franchisor:int
+    review:str
+    sentimen:str
