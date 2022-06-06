@@ -31,7 +31,7 @@ def read_root():
     return {"Hello": "World"}
 
 
-@app.get("/franchisors/")
+@app.get("/franchisors")
 def get_AllFranchisor():
     try:
         conn = database.open_connection()
@@ -44,7 +44,21 @@ def get_AllFranchisor():
     except Exception as e:
         print(e)
 
-@app.get("/getRequest/")
+@app.get("/franchisors/{id}")
+def get_FranchisorById(id: int):
+    try:
+        conn = database.open_connection()
+        with conn.cursor() as cursor:
+            query = "SELECT * FROM franchisor WHERE id_franchisor="+str(id)+";"
+            cursor.execute(query)
+            result = jsonable_encoder(cursor.fetchall())
+        conn.close()
+
+        return result
+    except Exception as e:
+        print(e)
+
+@app.get("/getRequest")
 def get_AllRequest():
     try:
         conn = database.open_connection()
