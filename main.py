@@ -4,6 +4,7 @@ from fastapi import FastAPI
 import database
 from schemas import RequestSchema, User, Review
 from fastapi.encoders import jsonable_encoder
+from passlib.context import CryptContext
 
 
 
@@ -73,11 +74,11 @@ def add_request(request: RequestSchema):
             print(e)
 
 @app.get("/getReview/{id}")
-def get_AllReview():
+def get_AllReview(id):
     try:
         conn = database.open_connection()
         with conn.cursor() as cursor:
-            cursor.execute('SELECT * FROM review WHERE id_franchisor == id;')
+            cursor.execute('SELECT * FROM review WHERE id == id_franchisor;')
             result = jsonable_encoder(cursor.fetchall())
         conn.close()
         return result
@@ -92,6 +93,26 @@ def add_review(request: Review):
             review_user = "'"+request.review+"'"
             sentimen = "'"+request.sentimen+"'"
             query = "INSERT INTO review (id_franchisor, review, sentimen) VALUES ("+str(request.id_franchisor)+", "+review_user+", "+sentimen+");"
+            cursor.execute(query)
+        conn.commit()
+        conn.close()
+        return
+    except Exception as e:
+        print(e)
+
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+@app.post("/signup")
+def user_signup(request: User):
+    try: 
+        conn = database.open_connection()
+        with conn.cursor() as cursor:
+            username = "'"+request.username+"'"
+            nama = "'"+request.nama+"'"
+            email = "'"+request.email+"'"
+            password = "'"+request.password+"'"
+            hashedPassword = pwd_context.hash(password)
+            query = "INSERT INTO user (username, password, email, nama) VALUES ("+username+", "+hashedPassword+", "+email+", "+nama+");"
             cursor.execute(query)
         conn.commit()
         conn.close()

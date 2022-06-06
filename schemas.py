@@ -10,9 +10,9 @@ class RequestSchema(BaseModel):
 
 class User(BaseModel):
     username:str
+    password:str
     nama:str
     email:str
-    password:str
 
 class Review(BaseModel):
     id_franchisor:int
