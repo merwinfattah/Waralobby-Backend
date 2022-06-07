@@ -1,7 +1,7 @@
 from typing import Union
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, status, HTTPException, Depends
-import database, token, auth, schemas
+import database, token, auth
 from schemas import RequestSchema, User, Review, Login
 from fastapi.encoders import jsonable_encoder
 from passlib.context import CryptContext
@@ -127,7 +127,7 @@ def user_signUp(request: User):
             nama = "'"+request.nama+"'"
             email = "'"+request.email+"'"
             password = "'"+request.password+"'"
-            hashedPassword = pwd_context.hash(password)
+            hashedPassword = "'"+pwd_context.hash(password)+"'"
             query = "INSERT INTO user (username, password, email, nama) VALUES ("+username+", "+hashedPassword+", "+email+", "+nama+");"
             cursor.execute(query)
         conn.commit()
@@ -143,7 +143,7 @@ class Hash():
 @app.post("/signIn")
 def user_signIn(request:OAuth2PasswordRequestForm = Depends()):
     try:
-        conn.database.open_connection()
+        conn = database.open_connection()
         with conn.cursor() as cursor:
             username = "'"+request.username+"'"
             query = "SELECT * FROM user WHERE username="+username+";"
@@ -152,11 +152,11 @@ def user_signIn(request:OAuth2PasswordRequestForm = Depends()):
             if not result:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                         detail="Invalid Username")
-            if not Hash.verify(user.password, request.password):
+            if not Hash.verify(result[0][2], request.password):
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                         detail="Incorrect password")
         
-        access_token = token.create_access_token(data={"sub": request.username})
+        access_token = token.create_access_token(data={"sub": result[0][1]})
         conn.close()
         return {"access_token": access_token, "token_type": "bearer"}
     except Exception as e:
