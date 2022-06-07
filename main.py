@@ -1,15 +1,18 @@
 from typing import Union
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, status, HTTPException, Depends
-import database, token, auth
-from schemas import RequestSchema, User, Review, Login
+import database
+from schemas import RequestSchema, User, Review
 from fastapi.encoders import jsonable_encoder
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordRequestForm
-
+from auth import AuthHandler
+from schemas import AuthDetails
 
 
 app = FastAPI()
+
+auth_handler = AuthHandler()
 
 origins = [
     "http://localhost:3000",
@@ -118,7 +121,7 @@ def add_review(request: Review):
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-@app.post("/signUp")
+@app.post("/register")
 def user_signUp(request: User):
     try: 
         conn = database.open_connection()
@@ -136,32 +139,32 @@ def user_signUp(request: User):
     except Exception as e:
         print(e)
 
-class Hash():
-    def verify(hashed_password,plain_password):
-        return pwd_context.verify(plain_password,hashed_password)
-
-@app.post("/signIn")
-def user_signIn(request:OAuth2PasswordRequestForm = Depends()):
-    try:
+@app.post('/login')
+def user_signIn(auth_details: AuthDetails):
+    try: 
         conn = database.open_connection()
         with conn.cursor() as cursor:
-            username = "'"+request.username+"'"
+            username = "'"+auth_details.username+"'"
+            password = "'"+auth_details.password+"'"
             query = "SELECT * FROM user WHERE username="+username+";"
             cursor.execute(query)
             result = jsonable_encoder(cursor.fetchall())
-            if not result:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                        detail="Invalid Username")
-            if not Hash.verify(result[0][2], request.password):
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                        detail="Incorrect password")
-        
-        access_token = token.create_access_token(data={"sub": result[0][1]})
+            verifiedPassword = "'"+auth_handler.verify_password(auth_details.password, result[0][2])+"'"
+            
+            query2 = "SELECT * FROM user WHERE username="+username+" AND password="+verifiedPassword+" ;"
+            cursor.execute(query2)
+            result2 = jsonable_encoder(cursor.fetchall())
+            if not result2:
+                raise HTTPException(status_code=401, detail='Invalid username and/or password')
+            
+            else:
+                token = auth_handler.encode_token('username')
+                return { 'token': token }
+        conn.commit()
         conn.close()
-        return {"access_token": access_token, "token_type": "bearer"}
     except Exception as e:
         print(e)
-
+   
 
 @app.get("/user/{id}")
 def get_Profil_User(id: int):
