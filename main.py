@@ -1,10 +1,11 @@
 from typing import Union
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI
-import database
-from schemas import RequestSchema, User, Review
+from fastapi import FastAPI, status, HTTPException, Depends
+import database, token, auth, schemas
+from schemas import RequestSchema, User, Review, Login
 from fastapi.encoders import jsonable_encoder
 from passlib.context import CryptContext
+from fastapi.security import OAuth2PasswordRequestForm
 
 
 
@@ -33,7 +34,7 @@ def read_root():
 
 
 @app.get("/franchisors")
-def get_AllFranchisor():
+def get_AllFranchisor(current_user: schemas.User = Depends(auth.get_current_user)):
     try:
         conn = database.open_connection()
         with conn.cursor() as cursor:
@@ -88,11 +89,12 @@ def add_request(request: RequestSchema):
             print(e)
 
 @app.get("/getReview/{id}")
-def get_AllReview(id):
+def get_AllReview(id: int):
     try:
         conn = database.open_connection()
         with conn.cursor() as cursor:
-            cursor.execute('SELECT * FROM review WHERE id == id_franchisor;')
+            query = "SELECT * FROM review WHERE id_franchisor="+str(id)+";"
+            cursor.execute(query)
             result = jsonable_encoder(cursor.fetchall())
         conn.close()
         return result
@@ -116,8 +118,8 @@ def add_review(request: Review):
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-@app.post("/signup")
-def user_signup(request: User):
+@app.post("/signUp")
+def user_signUp(request: User):
     try: 
         conn = database.open_connection()
         with conn.cursor() as cursor:
@@ -133,6 +135,46 @@ def user_signup(request: User):
         return
     except Exception as e:
         print(e)
+
+class Hash():
+    def verify(hashed_password,plain_password):
+        return pwd_context.verify(plain_password,hashed_password)
+
+@app.post("/signIn")
+def user_signIn(request:OAuth2PasswordRequestForm = Depends()):
+    try:
+        conn.database.open_connection()
+        with conn.cursor() as cursor:
+            username = "'"+request.username+"'"
+            query = "SELECT * FROM user WHERE username="+username+";"
+            cursor.execute(query)
+            result = jsonable_encoder(cursor.fetchall())
+            if not result:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Invalid Username")
+            if not Hash.verify(user.password, request.password):
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Incorrect password")
+        conn.close()
+        access_token = token.create_access_token(data={"sub": user.email})
+        return {"access_token": access_token, "token_type": "bearer"}
+    except Exception as e:
+        print(e)
+
+
+@app.get("/user/{id}")
+def get_Profil_User(id: int):
+    try:
+        conn = database.open_connection()
+        with conn.cursor() as cursor:
+            query = "SELECT * FROM user WHERE id_user="+str(id)+";"
+            cursor.execute(query)
+            result = jsonable_encoder(cursor.fetchall())
+        conn.close()
+
+        return result
+    except Exception as e:
+        print(e)       
 
 
 if __name__ == '__main__':
