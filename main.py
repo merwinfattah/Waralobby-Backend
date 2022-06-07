@@ -34,7 +34,7 @@ def read_root():
 
 
 @app.get("/franchisors")
-def get_AllFranchisor(current_user: schemas.User = Depends(auth.get_current_user)):
+def get_AllFranchisor():
     try:
         conn = database.open_connection()
         with conn.cursor() as cursor:
@@ -155,8 +155,9 @@ def user_signIn(request:OAuth2PasswordRequestForm = Depends()):
             if not Hash.verify(user.password, request.password):
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                         detail="Incorrect password")
+        
+        access_token = token.create_access_token(data={"sub": request.username})
         conn.close()
-        access_token = token.create_access_token(data={"sub": user.email})
         return {"access_token": access_token, "token_type": "bearer"}
     except Exception as e:
         print(e)
