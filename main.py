@@ -144,24 +144,18 @@ def user_signIn(auth_details: AuthDetails):
     try: 
         conn = database.open_connection()
         with conn.cursor() as cursor:
+            user = None
             username = "'"+auth_details.username+"'"
             password = "'"+auth_details.password+"'"
-            query = "SELECT * FROM user WHERE username="+username+";"
-            cursor.execute(query)
-            result = jsonable_encoder(cursor.fetchall())
-            verifiedPassword = "'"+auth_handler.verify_password(auth_details.password, result[0][2])+"'"
+            jumlah_user = jsonable_encoder(cursor.execute("SELECT COUNT(*) FROM user WHERE username="+username+";").fetchall())
             
-            query2 = "SELECT * FROM user WHERE username="+username+" AND password="+verifiedPassword+" ;"
-            cursor.execute(query2)
-            result2 = jsonable_encoder(cursor.fetchall())
-            if not result2:
+            if (jumlah_user[0] > 0):
+                user = jsonable_encoder(cursor.execute("SELECT * FROM user WHERE username="+username+";").fetchall())
+                token = auth_handler.encode_token(user[0][1])
+            if (user is None) or (not auth_handler.verify_password(auth_details.password, user[0][2])):
                 raise HTTPException(status_code=401, detail='Invalid username and/or password')
-            
-            else:
-                token = auth_handler.encode_token('username')
-                return { 'token': token }
-        conn.commit()
-        conn.close()
+        
+        return { 'token': token }
     except Exception as e:
         print(e)
    
