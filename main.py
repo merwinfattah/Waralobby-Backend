@@ -2,12 +2,11 @@ from typing import Union
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, status, HTTPException, Depends
 import database
-from schemas import RequestSchema, User, Review
+from schemas import RequestSchema, User, Review, AuthDetails
 from fastapi.encoders import jsonable_encoder
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordRequestForm
-from auth import AuthHandler
-from schemas import AuthDetails
+from auth import AuthHandler 
 
 
 app = FastAPI()
@@ -154,6 +153,25 @@ def get_AllReview(id: int):
             "id_franchisor": result[0][1],
             "review": result[0][2],
             "sentimen": result[0][3]
+        }
+    except Exception as e:
+        print(e)
+
+@app.get("/getPerformanceIndex/{id}")
+def get_PerformanceIndex(id: int):
+    try:
+        conn = database.open_connection()
+        with conn.cursor() as cursor:
+            query = "SELECT COUNT(*) FROM review WHERE sentimen = 'negative';"
+            cursor.execute(query)
+            result1 = jsonable_encoder(cursor.fetchall())
+            sql = "SELECT COUNT(*) FROM review WHERE sentimen = 'positive';"
+            cursor.execute(sql)
+            result2 = jsonable_encoder(cursor.fetchall())
+            index = result2 / (result1 + result2)
+        conn.close()
+        return {
+            "performance_index": index
         }
     except Exception as e:
         print(e)
