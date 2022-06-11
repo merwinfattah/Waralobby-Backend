@@ -44,8 +44,24 @@ def get_AllFranchisor():
             cursor.execute('SELECT * FROM franchisor;')
             result = jsonable_encoder(cursor.fetchall())
         conn.close()
+        franchisorList = []
+        for franchisor in result:
+            franchisorList.append(
+                {
+                    "id_franchisor": franchisor[0],
+                    "nama_usaha": franchisor[1],
+                    "tags": franchisor[2],
+                    "logo": franchisor[3],
+                    "tanggal_berdiri": franchisor[4],
+                    "email": franchisor[5],
+                    "kontak": franchisor[6],
+                    "deskripsi_usaha": franchisor[7],
+                    "investment_cost": franchisor[8],
+                    "lokasi": franchisor[9]
+                }
+            )
 
-        return result
+        return franchisorList
     except Exception as e:
         print(e)
 
@@ -58,8 +74,20 @@ def get_FranchisorById(id: int):
             cursor.execute(query)
             result = jsonable_encoder(cursor.fetchall())
         conn.close()
-
-        return result
+        franchisor = {
+                        "id_franchisor": result[0][0],
+                        "nama_usaha": result[0][1],
+                        "tags": result[0][2],
+                        "logo": result[0][3],
+                        "tanggal_berdiri": result[0][4],
+                        "email": result[0][5],
+                        "kontak": result[0][6],
+                        "deskripsi_usaha": result[0][7],
+                        "investment_cost": result[0][8],
+                        "lokasi": result[0][9]
+                    }
+                        
+        return franchisor
     except Exception as e:
         print(e)
 
@@ -72,7 +100,21 @@ def get_AllRequest():
             result = jsonable_encoder(cursor.fetchall())
         conn.close()
 
-        return result
+        requestList = []
+        for request in result:
+            requestList.append(
+                {
+                    "id_request": request[0],
+                    "id_user": request[1],
+                    "id_franchisor": request[2],
+                    "jumlah_invest": request[3],
+                    "lokasi_tempat": request[4],
+                    "luas_tempat": request[5],
+                    "status": request[6]
+                }
+            )
+
+        return requestList
     except Exception as e:
         print(e)
 
@@ -87,7 +129,14 @@ def add_request(request: RequestSchema):
                     cursor.execute(query)
             conn.commit()
             conn.close()
-            return 
+            return {
+                    "id_user": request.id_user,
+                    "id_franchisor": request.id_franchisor,
+                    "jumlah_invest": request.jumlah_invest,
+                    "lokasi_tempat": request.lokasi_tempat,
+                    "luas_tempat": request.luas_tempat,
+                    "status": request.status
+                    }         
     except Exception as e:
             print(e)
 
@@ -100,7 +149,12 @@ def get_AllReview(id: int):
             cursor.execute(query)
             result = jsonable_encoder(cursor.fetchall())
         conn.close()
-        return result
+        return {
+            "id_review": result[0][0],
+            "id_franchisor": result[0][1],
+            "review": result[0][2],
+            "sentimen": result[0][3]
+        }
     except Exception as e:
         print(e)
 
@@ -115,7 +169,8 @@ def add_review(request: Review):
             cursor.execute(query)
         conn.commit()
         conn.close()
-        return
+        return "review added"
+     
     except Exception as e:
         print(e)
 
@@ -135,7 +190,7 @@ def user_signUp(request: User):
             cursor.execute(query)
         conn.commit()
         conn.close()
-        return
+        return "account registered successfully"
     except Exception as e:
         print(e)
 
@@ -149,13 +204,13 @@ def user_signIn(auth_details: AuthDetails):
             password = "'"+auth_details.password+"'"
             jumlah_user = jsonable_encoder(cursor.execute("SELECT COUNT(*) FROM user WHERE username="+username+";").fetchall())
             
-            if (jumlah_user[0] > 0):
+            if (jumlah_user[0][0] > 0):
                 user = jsonable_encoder(cursor.execute("SELECT * FROM user WHERE username="+username+";").fetchall())
                 token = auth_handler.encode_token(user[0][1])
             if (user is None) or (not auth_handler.verify_password(auth_details.password, user[0][2])):
                 raise HTTPException(status_code=401, detail='Invalid username and/or password')
         
-        return { 'token': token }
+        return { "token": token }
     except Exception as e:
         print(e)
    
@@ -170,7 +225,13 @@ def get_Profil_User(id: int):
             result = jsonable_encoder(cursor.fetchall())
         conn.close()
 
-        return result
+        return {
+            "id_user": result[0][0],
+            "username": result[0][1],
+            "password": result[0][2],
+            "email": result[0][3],
+            "nama": result[0][4]
+        }
     except Exception as e:
         print(e)       
 
